@@ -13,44 +13,52 @@ class ToDoAppCubit extends Cubit<ToDoAppStates> {
   static ToDoAppCubit get(context) => BlocProvider.of(context);
 
   int currentIndex = 0;
-
   List<Widget> screens = [
     const NewTasksScreen(),
     const DoneTasksScreen(),
     const ArchivedTasksScreen(),
   ];
-
   List<String> titles = [
     'New Tasks',
     'Done Tasks',
     'Archived Tasks',
   ];
 
-  void changeCurrentIndex(index){
+  bool isBottomSheetShown = false;
+  IconData fabIcon = Icons.edit;
+
+  void changeCurrentIndex(index) {
     currentIndex = index;
     emit(SwapBottomNavBar());
   }
 
-
+  void changeBottomSheetState({
+    required bool isShown,
+    required IconData icon,
+  }) {
+    isBottomSheetShown = isShown;
+    fabIcon = icon;
+    emit(SwapBottomSheetState());
+  }
 
   /// Database
-  Database? database;
-  List<Map>recordsNewTasks=[];
-  List<Map>recordsDoneTasks=[];
-  List<Map>recordsArchiveTasks=[];
+  late Database database;
+  List<Map<String, dynamic>> recordsNewTasks = [];
+  List<Map<String, dynamic>> recordsDoneTasks = [];
+  List<Map<String, dynamic>> recordsArchiveTasks = [];
 
   void createDatabase() {
-    //debugPrint('function is called');
     openDatabase(
       'todo.db',
       version: 1,
       onCreate: (database, version) {
         debugPrint('database created');
-
         // create tables
-        database.execute(
+        database
+            .execute(
           'create table tasks(ID INTEGER PRIMARY KEY, title TEXT, date TEXT, time TEXT, status TEXT)',
-        ).then((value) {
+        )
+            .then((value) {
           debugPrint('Table created');
         }).catchError((error) {
           debugPrint('Error when creating Table : ${error.toString()}');
@@ -59,7 +67,7 @@ class ToDoAppCubit extends Cubit<ToDoAppStates> {
       },
       onOpen: (database) {
         debugPrint('database opened');
-        getRecordsFromDatabase(database);
+        getRecordsFromDatabase();
       },
     ).then((value) {
       database = value; // value is the created database
@@ -72,6 +80,18 @@ class ToDoAppCubit extends Cubit<ToDoAppStates> {
     required date,
     required time,
   }) async {
+    await database.rawInsert(
+      'INSERT INTO tasks(title,date,time,status) VALUES("$title" , "$date" , "$time" , "new")',
+    ).then((value) {
+      // this value is the ID to this insertedRow
+      debugPrint('ID : $value inserted successfully');
+      emit(InsertToDatabaseState());
+      getRecordsFromDatabase();
+    }).catchError((error) {
+      print(error.toString());
+    });
+
+    /*
     await database!.transaction((txn) async {
       await txn.rawInsert(
         'INSERT INTO tasks(title,date,time,status) VALUES("$title" , "$date" , "$time" , "new")',
@@ -89,24 +109,26 @@ class ToDoAppCubit extends Cubit<ToDoAppStates> {
       //return Future.value();
     }); // end transaction
 
+     */
   } // insertToDatabase
 
-  void getRecordsFromDatabase(database)async{
-    recordsNewTasks=[];
-    recordsDoneTasks=[];
-    recordsArchiveTasks=[];
+  void getRecordsFromDatabase() async {
+    recordsNewTasks = [];
+    recordsDoneTasks = [];
+    recordsArchiveTasks = [];
 
     emit(GetRecordsLoadingState());
     database.rawQuery('SELECT * FROM tasks').then((value) {
-      value.forEach((row){ // value >> is a returned list<map>
-        if(row['status']=='done') {
+      for (var row in value) {
+        // value >> is a returned List<Map<String, Object?>>
+        if (row['status'] == 'done') {
           recordsDoneTasks.add(row);
-        }else if(row['status']=='archive') {
+        } else if (row['status'] == 'archive') {
           recordsArchiveTasks.add(row);
-        }else {
+        } else {
           recordsNewTasks.add(row);
         }
-      }); // end of loop
+      } // end of loop
 
       emit(GetRecordsFromDatabaseState());
     });
@@ -114,40 +136,24 @@ class ToDoAppCubit extends Cubit<ToDoAppStates> {
 
   void updateInToDatabase({
     required String status,
-    required int id,})async
-  {
-    await database!.rawUpdate(
-        'UPDATE tasks SET status = ? WHERE ID = ?', [status, id]
+    required int id,
+  }) async {
+    await database.rawUpdate(
+        'UPDATE tasks SET status = ? WHERE ID = ?', [status, id],
     ).then((value) {
-      getRecordsFromDatabase(database);
       emit(UpdateInToDatabaseState());
+      getRecordsFromDatabase();
     });
-
   }
 
   void deleteFromDatabase({
     required int id,
-  })async {
-    await database!.rawDelete(
-        'DELETE FROM tasks WHERE ID = ?', [id]
+  }) async {
+    await database.rawDelete('DELETE FROM tasks WHERE ID = ?', [id],
     ).then((value) {
-      getRecordsFromDatabase(database);
       emit(DeleteFromDatabaseState());
+      getRecordsFromDatabase();
     });
-
   }
-
-
-  bool isBottomSheetShown = false;
-  IconData fabIcon = Icons.edit;
-
-  void changeBottomSheetState({
-    required bool isShown,
-    required IconData icon,
-}){
-    isBottomSheetShown = isShown;
-    fabIcon = icon;
-    emit(SwapBottomSheetState());
-}
 
 }

@@ -30,10 +30,6 @@ class ToDoLayout extends StatelessWidget {
     return BlocProvider(
       create: (BuildContext context) => ToDoAppCubit()..createDatabase(),
       child: BlocConsumer<ToDoAppCubit,ToDoAppStates>(
-        // BlocConsumer >> اللي هتحصل (states)على التغيرات listen هو اللي بيخليني اقدر أ
-        // ToDoAppCubit  >> cubit عشان يبقى عارف هو تبع اني
-        // ToDoAppStates >> state عشان يبقى عارف هو في اني
-
         listener: (BuildContext context,ToDoAppStates state){
           if(state is InsertToDatabaseState){
             // reset fields
@@ -57,7 +53,7 @@ class ToDoLayout extends StatelessWidget {
             ),
             //body: recordsTasks.isNotEmpty ? screens[currentIndex] : const Center(child: CircularProgressIndicator()),
             body: ConditionalBuilder(
-              condition: state is! GetRecordsLoadingState ,//recordsTasks.isNotEmpty
+              condition: state is! GetRecordsLoadingState , //recordsTasks.isNotEmpty
               builder: (context) => cubit.screens[cubit.currentIndex], // if condition >> true
               fallback: (context) => const Center(child: CircularProgressIndicator()), // if condition >> false
             ),
@@ -95,7 +91,7 @@ class ToDoLayout extends StatelessWidget {
                                   boardType: TextInputType.text,
                                 ),
                                 const SizedBox(
-                                  height: 10,
+                                  height: 10
                                 ),
                                 defaultFormField(
                                   label: 'Task Time',
@@ -106,8 +102,7 @@ class ToDoLayout extends StatelessWidget {
                                       initialTime: TimeOfDay.now(),
                                     ).then((value) {
                                       if (value != null) {
-                                        timeController.text =
-                                            value.format(context).toString();
+                                        timeController.text = value.format(context).toString();
                                       }
                                     });
                                   },
@@ -121,7 +116,7 @@ class ToDoLayout extends StatelessWidget {
                                   boardType: TextInputType.none,
                                 ),
                                 const SizedBox(
-                                  height: 10,
+                                  height: 10
                                 ),
                                 defaultFormField(
                                   label: 'Task Date',
@@ -155,21 +150,12 @@ class ToDoLayout extends StatelessWidget {
                       icon: Icons.edit,
                       isShown: false,
                     );
-                    // Navigator.pop(context); انا بقفله ب ايدي ف مش محتاج دي
-                    //isBottomSheetShown = false;
-                    // setState(() {
-                    //   fabIcon = Icons.edit;
-                    // });
                   });
 
                   cubit.changeBottomSheetState(
                     isShown: true,
                     icon: Icons.add,
                   );
-                  //isBottomSheetShown = true;
-                  // setState(() {
-                  //   fabIcon = Icons.add;
-                  // });
                 }
               },
               child: Icon(
@@ -178,14 +164,9 @@ class ToDoLayout extends StatelessWidget {
             ),
             bottomNavigationBar: BottomNavigationBar(
               elevation: 60.0,
-              //backgroundColor: Colors.blue,
-              //type: BottomNavigationBarType.fixed,
               currentIndex: cubit.currentIndex,
               onTap: (index) {
                 cubit.changeCurrentIndex(index);
-                // setState(() {
-                //   currentIndex = index;
-                // });
               },
               items: const [
                 BottomNavigationBarItem(
